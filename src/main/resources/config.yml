@@ -1,0 +1,6 @@
+spawnLocation:
+  lat: 47.271636
+  lng: 11.396928
+heightMap: DGM_Tirol_10m_epsg4326_WSG84.tif
+geoCodingApiKey: xxx
+teleportationSuffix: ", Tirol, Österreich"

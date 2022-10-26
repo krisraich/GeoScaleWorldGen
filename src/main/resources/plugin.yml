@@ -1,0 +1,15 @@
+name: GeoScaleWorldGen
+version: '${project.version}'
+main: at.kara.geoworldgen.GeoScaleWorldGen
+api-version: 1.18
+authors: [ robsl2314, missery ]
+description: Creates a mc world to scale by using real world orthophoto
+website: https://kara-software.at/
+load: startup
+commands:
+  tpl:
+    description: Teleports the player to a specified location
+    usage: /tpl NameOfLocation
+  tpc:
+    description: Teleports the player to the specified gps position
+    usage: /tpc 47.271604, 11.396900
