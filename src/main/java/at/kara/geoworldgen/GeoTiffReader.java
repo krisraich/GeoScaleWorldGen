@@ -52,6 +52,9 @@ import java.util.Locale;
 @Getter
 public class GeoTiffReader {
 
+    public record Incline(double alpha, double orientation) { }
+
+
     /**
      * https://www.awaresystems.be/imaging/tiff/tifftags.html
      */
@@ -293,6 +296,33 @@ public class GeoTiffReader {
 
     public int getHeightForLocation(Location location){
         return this.getHeightForLocation(location.getBlockX(), location.getBlockZ());
+    }
+
+    public float getTerrainRoughness(Location location){
+        return this.getTerrainRoughness(location.getBlockX(), location.getBlockZ());
+    }
+
+
+    public float getTerrainRoughness(int xOrigin, int zOrigin){
+        int[] heights = new int[25];
+        float sum = 0;
+        int i = 0;
+        for(int z = 0; z < 5; z++){
+            for(int x = 0; x < 5; x++){
+                int currentHeight = getHeightForLocation(
+                        xOrigin - 2 + x,
+                        zOrigin - 2 + z
+                );
+                heights[i++] = currentHeight;
+                sum += currentHeight;
+            }
+        }
+        float average = sum / 25;
+        float deviation = 0;
+        for(i = 0; i < 25; i++){
+            deviation += Math.abs(average - heights[i]);
+        }
+        return deviation;
     }
 
 }

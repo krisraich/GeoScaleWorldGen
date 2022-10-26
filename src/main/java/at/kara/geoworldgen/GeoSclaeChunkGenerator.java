@@ -35,10 +35,26 @@ public class GeoSclaeChunkGenerator extends ChunkGenerator {
             for (int z = 0; z < 16; z++) {
 
                 int heightForLocation = this.geoTiffReader.getHeightForLocation(worldX + x, worldZ + z);
+                Material m;
+
+                //todo: use Gauss and not a hard limit
+                if(heightForLocation > 150){
+                    m = Material.STONE;
+                }else {
+                    float terrainRoughness = this.geoTiffReader.getTerrainRoughness(worldX + x, worldZ + z);
+
+                    if(terrainRoughness > 25){
+                        m = Material.STONE;
+                    }else if(terrainRoughness > 20){
+                        m = Material.GRAVEL;
+                    }else {
+                        m = Material.DIRT;
+                    }
+                }
 
                 chunkData.setBlock(x, -64, z, Material.BEDROCK);
                 for (int y = -63; y < heightForLocation; y++) {
-                    chunkData.setBlock(x, y, z, Material.STONE);
+                    chunkData.setBlock(x, y, z, m);
                 }
             }
         }
@@ -65,7 +81,7 @@ public class GeoSclaeChunkGenerator extends ChunkGenerator {
         @NotNull
         @Override
         public Biome getBiome(@NotNull WorldInfo worldInfo, int x, int y, int z) {
-            return parent.geoTiffReader.getHeightForLocation(x,z) > 190 ? Biome.FOREST : Biome.FROZEN_PEAKS; //todo: read biome from orhto
+            return parent.geoTiffReader.getHeightForLocation(x,z) > 150 ? Biome.FOREST : Biome.FROZEN_PEAKS; //todo: read biome from orhto
         }
 
         @NotNull

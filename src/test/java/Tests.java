@@ -113,6 +113,13 @@ public class Tests {
         );
     }
 
+    @Test
+    public void test_Incline() {
+        Location location = geoTiffReader.posToMcLocation(WILDSPITZE_LNG, WILDSPITZE_LAT);
+        float surfaceIncline = geoTiffReader.getTerrainRoughness(location);
+        Assert.assertEquals(20.5599, surfaceIncline, 0.001);
+    }
+
     private void assertLocation(Location location, int x, int y, int z){
         if(location == null){
             Assert.fail();
