@@ -10,3 +10,12 @@
 4. Build with `mvn clean package`. It should automatically run the unit tests. If tests are successful:
 
 5. Run plugin in a `spigot-1.18.2.jar` server
+
+## Example
+![MC vs RL](img.png?raw=true "MC vs RL")
+<sup><sub>Image by Google Earth</sub></sup>
+
+## ToDo:
+- Implement water (from GeoTif)
+- Implement forest (from GeoTif)
+- Generate Biomes (from GeoTif?)
