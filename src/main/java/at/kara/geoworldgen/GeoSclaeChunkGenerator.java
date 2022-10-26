@@ -45,24 +45,6 @@ public class GeoSclaeChunkGenerator extends ChunkGenerator {
     }
 
 
-    //    @Override
-//    public int getBaseHeight(@NotNull WorldInfo worldInfo, @NotNull Random random, int x, int z, @NotNull HeightMap heightMap) {
-//        return super.getBaseHeight(worldInfo, random, x, z, heightMap);
-//    }
-//
-//
-//    @Override
-//    public void generateSurface(@NotNull WorldInfo worldInfo, @NotNull Random random, int x, int z, @NotNull ChunkGenerator.ChunkData chunkData) {
-//        super.generateSurface(worldInfo, random, x, z, chunkData);
-//    }
-//
-//    @Override
-//    public void generateCaves(@NotNull WorldInfo worldInfo, @NotNull Random random, int x, int z, @NotNull ChunkGenerator.ChunkData chunkData) {
-//        super.generateCaves(worldInfo, random, x, z, chunkData);
-//    }
-
-
-
     private static class CustomBiomesProvider extends BiomeProvider {
 
         private static CustomBiomesProvider instance;
@@ -122,18 +104,10 @@ public class GeoSclaeChunkGenerator extends ChunkGenerator {
     }
 
     @Override
-    public boolean shouldGenerateBedrock() { return true; }
-
-    @Override
-    public boolean shouldGenerateCaves() { return true; }
-
-    @Override
     public boolean shouldGenerateDecorations() { return true; }
 
     @Override
     public boolean shouldGenerateMobs() { return true; }
 
-    @Override
-    public boolean shouldGenerateStructures() { return true; }
 
 }

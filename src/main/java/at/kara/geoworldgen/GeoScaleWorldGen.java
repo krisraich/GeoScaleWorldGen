@@ -17,8 +17,6 @@ public final class GeoScaleWorldGen extends JavaPlugin {
 
     private GeoSclaeChunkGenerator geoSclaeChunkGenerator;
 
-    private GeoCodingService geoCodingService;
-
     private final PluginLogger logger = new PluginLogger(this);
 
     @Override
@@ -27,7 +25,7 @@ public final class GeoScaleWorldGen extends JavaPlugin {
         GeoTiffReader geoTiffReader = new GeoTiffReader(geoScaleWorldConfig);
         geoTiffReader.init();
         this.geoSclaeChunkGenerator = new GeoSclaeChunkGenerator(geoTiffReader, geoScaleWorldConfig);
-        geoCodingService = new GeoCodingService(this, geoScaleWorldConfig, geoTiffReader);
+        GeoCodingService geoCodingService = new GeoCodingService(this, geoScaleWorldConfig, geoTiffReader);
 
         this.getCommand("tpl").setExecutor(geoCodingService);
         this.getCommand("tpc").setExecutor(geoCodingService);

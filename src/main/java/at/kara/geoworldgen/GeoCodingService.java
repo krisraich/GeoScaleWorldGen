@@ -164,6 +164,10 @@ public class GeoCodingService implements CommandExecutor {
             Map<String, Map<String, ArrayList<Double>>> currentSmallestFeature = null;
             for(Map<String, Map<String, ArrayList<Double>>> feature : features){
                 ArrayList<Double> bboxList = (ArrayList)feature.get("bbox");
+                if(bboxList == null){ // location is precise
+                    currentSmallestFeature = feature;
+                    break;
+                }
                 double boxSize = (Math.abs(bboxList.get(0) - bboxList.get(2)) * Math.abs(bboxList.get(1) - bboxList.get(3))) / 2;
                 if(boxSize < minBoxSize){
                     currentSmallestFeature = feature;
