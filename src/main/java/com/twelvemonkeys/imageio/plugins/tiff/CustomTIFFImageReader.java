@@ -1996,10 +1996,6 @@ public final class CustomTIFFImageReader extends ImageReaderBase {
         }
     }
 
-    private void clamp(final float[] rowDataFloat) {
-
-    }
-
     private void normalizeColorPlanar(int photometricInterpretation, WritableRaster raster) throws IIOException {
         // TODO: Other transfer types?
         if (raster.getTransferType() != DataBuffer.TYPE_BYTE) {
@@ -2273,7 +2269,6 @@ public final class CustomTIFFImageReader extends ImageReaderBase {
 
     private void normalizeColor(int photometricInterpretation, @SuppressWarnings("unused") int numBands, float[] data) {
         // TODO: Allow param to decide tone mapping strategy, like in the HDRImageReader
-        clamp(data);
 
         switch (photometricInterpretation) {
             case TIFFBaseline.PHOTOMETRIC_WHITE_IS_ZERO:

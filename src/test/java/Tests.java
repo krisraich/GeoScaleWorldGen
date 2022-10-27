@@ -1,6 +1,6 @@
 import at.kara.geoworldgen.GeoCodingService;
-import at.kara.geoworldgen.GeoTiffReader;
 import at.kara.geoworldgen.GeoScaleWorldConfig;
+import at.kara.geoworldgen.GeoTiffReader;
 import lombok.extern.java.Log;
 import org.bukkit.Location;
 import org.junit.Assert;

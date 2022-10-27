@@ -52,9 +52,6 @@ import java.util.Locale;
 @Getter
 public class GeoTiffReader {
 
-    public record Incline(double alpha, double orientation) { }
-
-
     /**
      * https://www.awaresystems.be/imaging/tiff/tifftags.html
      */
@@ -109,7 +106,7 @@ public class GeoTiffReader {
 
     private double pixelYScale;
 
-    public float noMapDataValue;
+    public int noMapDataValue;
 
 
     public GeoTiffReader(GeoScaleWorldConfig geoScaleWorldConfig) {
@@ -125,7 +122,7 @@ public class GeoTiffReader {
             throw new IOException("Can't find file!");
         }
         if(!file.canRead()){
-            throw new IOException("Can't read file");
+            throw new IOException("Can't read file!");
         }
         this.geoScaleWorldConfig.info(String.format(Locale.ENGLISH, "Tiff size: %.2f MiB. Start reading...", file.length() / 1048576.0));
 
@@ -169,7 +166,7 @@ public class GeoTiffReader {
         this.geoScaleWorldConfig.info("Reading height information...");
         //read no map value
         Entry noDataValue = imageMetadata.getTIFFField(GDAL_NODATA_TAG);
-        this.noMapDataValue = Float.parseFloat((String)noDataValue.getValue());
+        this.noMapDataValue = Integer.parseInt((String)noDataValue.getValue());
 
         float minHeight = Float.MAX_VALUE;
         float maxHeight = Float.MIN_VALUE;
@@ -232,10 +229,6 @@ public class GeoTiffReader {
         geoScaleWorldConfig.info("GeoTIFF successfully read");
     }
 
-    public Location posToMcLocation(double longitude, double latitude){
-        return this.posToMcLocation(longitude, latitude, null);
-    }
-
     public Location posToMcLocation(double longitude, double latitude, World world){
         //get x
         double xDistance = this.geoCalc.calculateGeodeticMeasurement(
@@ -268,8 +261,11 @@ public class GeoTiffReader {
         );
     }
 
+    public Location posToMcLocation(double longitude, double latitude){
+        return this.posToMcLocation(longitude, latitude, null);
+    }
 
-    private double getHeightFromMap(int x, int y){
+    private float getHeightFromMap(int x, int y){
         try {
             return this.raster.getSampleFloat(x, y, 0);
         }catch (ArrayIndexOutOfBoundsException ignored){
@@ -278,28 +274,24 @@ public class GeoTiffReader {
     }
 
     public int getHeightForLocation(int x, int z){
-        double height = this.getHeightFromMap(
+        float height = this.getHeightFromMap(
                 this.xOffset + x,
                 this.zOffset + z
         );
 
         if(height == this.noMapDataValue){
-            return (int)this.noMapDataValue;
+            return this.noMapDataValue;
         }
 
         height /= this.heightScale;
 
         height -= this.heightOffset;
 
-        return (int)Math.round(height);
+        return Math.round(height);
     }
 
     public int getHeightForLocation(Location location){
         return this.getHeightForLocation(location.getBlockX(), location.getBlockZ());
-    }
-
-    public float getTerrainRoughness(Location location){
-        return this.getTerrainRoughness(location.getBlockX(), location.getBlockZ());
     }
 
 
@@ -323,6 +315,10 @@ public class GeoTiffReader {
             deviation += Math.abs(average - heights[i]);
         }
         return deviation;
+    }
+
+    public float getTerrainRoughness(Location location){
+        return this.getTerrainRoughness(location.getBlockX(), location.getBlockZ());
     }
 
 }
