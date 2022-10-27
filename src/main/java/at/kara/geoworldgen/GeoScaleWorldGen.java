@@ -21,6 +21,7 @@ public final class GeoScaleWorldGen extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        saveDefaultConfig();
         GeoScaleWorldConfig geoScaleWorldConfig = GeoScaleWorldConfig.read(logger, getConfig());
         GeoTiffReader geoTiffReader = new GeoTiffReader(geoScaleWorldConfig);
         geoTiffReader.init();
