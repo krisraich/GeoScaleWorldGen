@@ -13,14 +13,14 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Random;
 
-public class GeoSclaeChunkGenerator extends ChunkGenerator {
+public class GeoScaleChunkGenerator extends ChunkGenerator {
 
     private final GeoTiffReader geoTiffReader;
     private final GeoScaleWorldConfig geoScaleWorldConfig;
 
     private Location spawn;
 
-    public GeoSclaeChunkGenerator(GeoTiffReader geoTiffReader, GeoScaleWorldConfig geoScaleWorldConfig) {
+    public GeoScaleChunkGenerator(GeoTiffReader geoTiffReader, GeoScaleWorldConfig geoScaleWorldConfig) {
         this.geoScaleWorldConfig = geoScaleWorldConfig;
         this.geoTiffReader = geoTiffReader;
     }
@@ -35,26 +35,37 @@ public class GeoSclaeChunkGenerator extends ChunkGenerator {
             for (int z = 0; z < 16; z++) {
 
                 int heightForLocation = this.geoTiffReader.getHeightForLocation(worldX + x, worldZ + z);
-                Material m;
+                Material deepMaterial;
+                Material surfaceMaterial;
 
+                deepMaterial = Material.STONE;
+
+                surfaceMaterial = Material.DIRT;
                 //todo: use Gauss and not a hard limit
                 if(heightForLocation > 150){
-                    m = Material.STONE;
-                }else {
-                    float terrainRoughness = this.geoTiffReader.getTerrainRoughness(worldX + x, worldZ + z);
+                    surfaceMaterial = Material.STONE;
+                }
 
-                    if(terrainRoughness > 25){
-                        m = Material.STONE;
-                    }else if(terrainRoughness > 20){
-                        m = Material.GRAVEL;
-                    }else {
-                        m = Material.DIRT;
-                    }
+                float terrainRoughness = this.geoTiffReader.getTerrainRoughness(worldX + x, worldZ + z);
+                if(terrainRoughness > 25){
+                    surfaceMaterial = Material.STONE;
+                }else if(terrainRoughness > 20){
+                    surfaceMaterial = Material.GRAVEL;
+                }else {
+                    surfaceMaterial = Material.DIRT;
                 }
 
                 chunkData.setBlock(x, -64, z, Material.BEDROCK);
                 for (int y = -63; y < heightForLocation; y++) {
-                    chunkData.setBlock(x, y, z, m);
+
+                    if (Math.abs(heightForLocation - y) > 5){
+                        chunkData.setBlock(x, y, z, deepMaterial);
+                        continue;
+                    }
+                    if ( Math.abs(heightForLocation - y) == 1 && surfaceMaterial == Material.DIRT) {
+                        surfaceMaterial = Material.GRASS_BLOCK;
+                    }
+                    chunkData.setBlock(x, y, z, surfaceMaterial);
                 }
             }
         }
@@ -65,16 +76,16 @@ public class GeoSclaeChunkGenerator extends ChunkGenerator {
 
         private static CustomBiomesProvider instance;
 
-        public static CustomBiomesProvider getInstance(GeoSclaeChunkGenerator geoSclaeChunkGenerator){
+        public static CustomBiomesProvider getInstance(GeoScaleChunkGenerator geoScaleChunkGenerator){
             if(instance == null){
-                instance = new CustomBiomesProvider(geoSclaeChunkGenerator);
+                instance = new CustomBiomesProvider(geoScaleChunkGenerator);
             }
             return instance;
         }
 
-        private final GeoSclaeChunkGenerator parent;
+        private final GeoScaleChunkGenerator parent;
 
-        private CustomBiomesProvider(GeoSclaeChunkGenerator parent) {
+        private CustomBiomesProvider(GeoScaleChunkGenerator parent) {
             this.parent = parent;
         }
 
