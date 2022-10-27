@@ -15,7 +15,7 @@ public final class GeoScaleWorldGen extends JavaPlugin {
         return plugin;
     }
 
-    private GeoSclaeChunkGenerator geoSclaeChunkGenerator;
+    private GeoScaleChunkGenerator geoScaleChunkGenerator;
 
     private final PluginLogger logger = new PluginLogger(this);
 
@@ -25,7 +25,7 @@ public final class GeoScaleWorldGen extends JavaPlugin {
         GeoScaleWorldConfig geoScaleWorldConfig = GeoScaleWorldConfig.read(logger, getConfig());
         GeoTiffReader geoTiffReader = new GeoTiffReader(geoScaleWorldConfig);
         geoTiffReader.init();
-        this.geoSclaeChunkGenerator = new GeoSclaeChunkGenerator(geoTiffReader, geoScaleWorldConfig);
+        this.geoScaleChunkGenerator = new GeoScaleChunkGenerator(geoTiffReader, geoScaleWorldConfig);
         GeoCodingService geoCodingService = new GeoCodingService(this, geoScaleWorldConfig, geoTiffReader);
 
         this.getCommand("tpl").setExecutor(geoCodingService);
@@ -42,7 +42,7 @@ public final class GeoScaleWorldGen extends JavaPlugin {
 
     @Override
     public ChunkGenerator getDefaultWorldGenerator(String worldName, String id) {
-        return this.geoSclaeChunkGenerator;
+        return this.geoScaleChunkGenerator;
     }
 
 }
