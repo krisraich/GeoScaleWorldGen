@@ -30,6 +30,7 @@ public final class GeoScaleWorldGen extends JavaPlugin {
 
         this.getCommand("tpl").setExecutor(geoCodingService);
         this.getCommand("tpc").setExecutor(geoCodingService);
+        this.getCommand("tpr").setExecutor(geoCodingService);
 
         logger.log(Level.INFO, "Finished loading plugin.");
     }

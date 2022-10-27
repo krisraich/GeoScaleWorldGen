@@ -59,15 +59,19 @@ public class GeoCodingService implements CommandExecutor {
                     player.sendMessage("Location outside of map!");
                 }
             }else {
-                geoScaleWorldConfig.info("start teleporting");
-                if(player != null){
-                    //set player heading north
-                    result.setPitch(0);
-                    result.setYaw(180);
-                    result.setWorld(player.getWorld());
-                    player.sendMessage("Teleporting... Energize!");
-                    player.teleport(result);
-                }
+                teleportPlayer();
+            }
+        }
+
+        protected void teleportPlayer(){
+            geoScaleWorldConfig.info("start teleporting");
+            if(player != null){
+                //set player heading north
+                result.setPitch(0);
+                result.setYaw(180);
+                result.setWorld(player.getWorld());
+                player.sendMessage("Teleporting... Energize!");
+                player.teleport(result);
             }
         }
     }
@@ -188,6 +192,19 @@ public class GeoCodingService implements CommandExecutor {
         }
     }
 
+    public class RandomTeleportTask extends BaseTeleportationTask {
+
+        private RandomTeleportTask(Player player) {
+            super(player, null);
+        }
+
+        @Override
+        public void run() {
+           this.result =  geoTiffReader.randomLocationOnMap();
+           this.teleportPlayer();
+        }
+    }
+
     private final Plugin plugin;
 
     private final GeoScaleWorldConfig geoScaleWorldConfig;
@@ -204,18 +221,21 @@ public class GeoCodingService implements CommandExecutor {
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         if(sender instanceof Player player){
-            BaseTeleportationTask baseTeleportationTask;
+            BukkitRunnable bukkitRunnable;
             switch (command.getName()){
                 case "tpl":
-                    baseTeleportationTask = getTeleportToNameTask(player, args);
+                    bukkitRunnable = getTeleportToNameTask(player, args);
                     break;
                 case "tpc":
-                    baseTeleportationTask = getTeleportToCoordinatesTask(player, args);
+                    bukkitRunnable = getTeleportToCoordinatesTask(player, args);
+                    break;
+                case "tpr":
+                    bukkitRunnable = getRandomTeleportTask(player);
                     break;
                 default:
                     return false;
             }
-            baseTeleportationTask.runTask(plugin);
+            bukkitRunnable.runTask(plugin);
         }
         return true;
     }
@@ -226,6 +246,10 @@ public class GeoCodingService implements CommandExecutor {
 
     public TeleportToCoordinatesTask getTeleportToCoordinatesTask(Player player, String[] args){
         return new TeleportToCoordinatesTask(player, args);
+    }
+
+    public RandomTeleportTask getRandomTeleportTask(Player player){
+        return new RandomTeleportTask(player);
     }
 
 

@@ -20,7 +20,9 @@ import java.awt.image.DataBuffer;
 import java.awt.image.Raster;
 import java.io.File;
 import java.io.IOException;
+import java.security.SecureRandom;
 import java.util.Locale;
+import java.util.Random;
 
 /**
  * LAT = Y = Height = NORTH / SOUT (47)
@@ -229,6 +231,24 @@ public class GeoTiffReader {
         geoScaleWorldConfig.info("GeoTIFF successfully read");
     }
 
+    private final Random r = new SecureRandom();
+    public Location randomLocationOnMap(){
+        float currentHeight;
+        int x, y;
+        do {
+            x = (int) (this.rasterWidth * r.nextDouble());
+            y = (int) (this.rasterHeight * r.nextDouble());
+            currentHeight = this.getHeightFromMap(x,y);
+        }while (currentHeight == this.noMapDataValue);
+
+        return new Location(
+                null,
+                this.xOffset + x,
+                this.translateHeightToMc(currentHeight),
+                this.zOffset + y
+        );
+    }
+
     public Location posToMcLocation(double longitude, double latitude, World world){
         //get x
         double xDistance = this.geoCalc.calculateGeodeticMeasurement(
@@ -278,16 +298,19 @@ public class GeoTiffReader {
                 this.xOffset + x,
                 this.zOffset + z
         );
+        return translateHeightToMc(height);
+    }
 
-        if(height == this.noMapDataValue){
+    private int translateHeightToMc(float realHeight){
+        if(realHeight == this.noMapDataValue){
             return this.noMapDataValue;
         }
 
-        height /= this.heightScale;
+        realHeight /= this.heightScale;
 
-        height -= this.heightOffset;
+        realHeight -= this.heightOffset;
 
-        return Math.round(height);
+        return Math.round(realHeight);
     }
 
     public int getHeightForLocation(Location location){

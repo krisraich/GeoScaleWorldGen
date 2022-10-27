@@ -13,3 +13,6 @@ commands:
   tpc:
     description: Teleports the player to the specified gps position
     usage: /tpc 47.271604, 11.396900
+  tpr:
+    description: Teleports the player to a random position on map
+    usage: /tpr

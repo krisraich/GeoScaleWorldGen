@@ -120,6 +120,19 @@ public class Tests {
         Assert.assertEquals(20.5599, surfaceIncline, 0.001);
     }
 
+
+    @Test
+    public void test_RandomTeleport() {
+        GeoCodingService.RandomTeleportTask randomTeleportTask = geoCodingService.getRandomTeleportTask(null);
+        randomTeleportTask.run();
+        Assert.assertNotEquals(
+                geoTiffReader.noMapDataValue,
+                randomTeleportTask.getResult().getBlockY()
+        );
+    }
+
+
+
     private void assertLocation(Location location, int x, int y, int z){
         if(location == null){
             Assert.fail();
