@@ -22,11 +22,20 @@ public final class GeoScaleWorldGen extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
-        GeoScaleWorldConfig geoScaleWorldConfig = GeoScaleWorldConfig.read(logger, getConfig());
-        GeoTiffReader geoTiffReader = new GeoTiffReader(geoScaleWorldConfig);
-        geoTiffReader.init();
-        this.geoScaleChunkGenerator = new GeoScaleChunkGenerator(geoTiffReader, geoScaleWorldConfig);
-        GeoCodingService geoCodingService = new GeoCodingService(this, geoScaleWorldConfig, geoTiffReader);
+        PluginConfig pluginConfig = PluginConfig.read(getConfig());
+
+
+        HeightMapReader heightMapReader = new HeightMapReader(pluginConfig);
+        heightMapReader.init();
+
+        MetaMapReader metaMapReader = null;
+        if(pluginConfig.getMetaMapPath() != null){
+            metaMapReader = new MetaMapReader(pluginConfig);
+            metaMapReader.init();
+        }
+
+        this.geoScaleChunkGenerator = new GeoScaleChunkGenerator(heightMapReader, metaMapReader);
+        GeoCodingService geoCodingService = new GeoCodingService(this, pluginConfig, heightMapReader);
 
         this.getCommand("tpl").setExecutor(geoCodingService);
         this.getCommand("tpc").setExecutor(geoCodingService);

@@ -1,7 +1,9 @@
+*.geojson
+*.tiff
+*.tif
+
 # User-specific stuff
 .idea/
-
-*.tif
 
 *.iml
 *.ipr

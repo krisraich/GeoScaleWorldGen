@@ -14,8 +14,3 @@
 ## Example
 ![MC vs RL](img.png?raw=true "MC vs RL")
 <sup><sub>Image by Google Earth</sub></sup>
-
-## ToDo:
-- Implement water (from GeoTif)
-- Implement forest (from GeoTif)
-- Generate Biomes (from GeoTif?)

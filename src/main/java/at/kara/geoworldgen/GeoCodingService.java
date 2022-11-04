@@ -46,15 +46,15 @@ public class GeoCodingService implements CommandExecutor {
         }
 
         protected void teleportPlayer(double latitude, double longitude){
-            geoScaleWorldConfig.info(String.format(Locale.ENGLISH, "resolved request to: %f, %f", latitude, longitude));
+            Util.log(String.format(Locale.ENGLISH, "resolved request to: %f, %f", latitude, longitude));
 
             //check if inside of map
-            result = geoTiffReader.posToMcLocation(longitude, latitude);
+            result = heightMapReader.getMcLocationForLongLat(longitude, latitude);
 
-            geoScaleWorldConfig.info(String.format("mc pos: %d %d %d", (int)result.getX(), (int)result.getY(), (int)result.getZ()));
+            Util.log(String.format("mc pos: %d %d %d", (int)result.getX(), (int)result.getY(), (int)result.getZ()));
 
-            if(result.getY() == geoTiffReader.noMapDataValue){
-                geoScaleWorldConfig.info("cant teleport, outside of map");
+            if(result.getY() == heightMapReader.noMapDataValue){
+                Util.log("cant teleport, outside of map");
                 if(player != null){
                     player.sendMessage("Location outside of map!");
                 }
@@ -64,7 +64,7 @@ public class GeoCodingService implements CommandExecutor {
         }
 
         protected void teleportPlayer(){
-            geoScaleWorldConfig.info("start teleporting");
+            Util.log("start teleporting");
             if(player != null){
                 //set player heading north
                 result.setPitch(0);
@@ -89,7 +89,7 @@ public class GeoCodingService implements CommandExecutor {
             double longitude;
 
             if(args.length < 2){
-                geoScaleWorldConfig.info("no args given");
+                Util.log("no args given");
                 if(player != null){
                     player.sendMessage("Use /tpc 0.00000 0.00000");
                 }
@@ -106,7 +106,7 @@ public class GeoCodingService implements CommandExecutor {
                 latitude = Double.parseDouble(latStr);
                 longitude = Double.parseDouble(args[1]);
             }catch (NumberFormatException e){
-                geoScaleWorldConfig.info("cant parse latitude or longitude");
+                Util.log("cant parse latitude or longitude");
                 if(player != null){
                     player.sendMessage("Invalid latitude and/or longitude");
                 }
@@ -130,7 +130,7 @@ public class GeoCodingService implements CommandExecutor {
             String targetLocation;
 
             if(args.length < 1){
-                geoScaleWorldConfig.info("no args given");
+                Util.log("no args given");
                 if(player != null){
                     player.sendMessage("Use /tpc location Name");
                 }
@@ -141,14 +141,14 @@ public class GeoCodingService implements CommandExecutor {
             if(player != null){
                 player.sendMessage("Processing teleportation to: " + targetLocation);
             }
-            geoScaleWorldConfig.info("start resolving name query: " + targetLocation);
+            Util.log("start resolving name query: " + targetLocation);
             URL url = new URL(String.format(
                     API_URL,
-                    geoScaleWorldConfig.getGeoCodingApiKey(),
-                    URLEncoder.encode(targetLocation + geoScaleWorldConfig.teleportationSuffix, StandardCharsets.UTF_8)
+                    pluginConfig.getGeoCodingApiKey(),
+                    URLEncoder.encode(targetLocation + pluginConfig.teleportationSuffix, StandardCharsets.UTF_8)
             ));
 
-            geoScaleWorldConfig.info("sending request: " + url);
+            Util.log("sending request: " + url);
 
             HttpURLConnection http = (HttpURLConnection)url.openConnection();
             http.setRequestProperty("Accept", "application/json");
@@ -200,22 +200,22 @@ public class GeoCodingService implements CommandExecutor {
 
         @Override
         public void run() {
-           this.result =  geoTiffReader.randomLocationOnMap();
+           this.result =  heightMapReader.randomLocationOnMap();
            this.teleportPlayer();
         }
     }
 
     private final Plugin plugin;
 
-    private final GeoScaleWorldConfig geoScaleWorldConfig;
+    private final PluginConfig pluginConfig;
 
-    private final GeoTiffReader geoTiffReader;
+    private final HeightMapReader heightMapReader;
 
 
-    public GeoCodingService(Plugin plugin, GeoScaleWorldConfig geoScaleWorldConfig, GeoTiffReader geoTiffReader) {
+    public GeoCodingService(Plugin plugin, PluginConfig pluginConfig, HeightMapReader heightMapReader) {
         this.plugin = plugin;
-        this.geoScaleWorldConfig = geoScaleWorldConfig;
-        this.geoTiffReader = geoTiffReader;
+        this.pluginConfig = pluginConfig;
+        this.heightMapReader = heightMapReader;
     }
 
     @Override

@@ -1,6 +1,4 @@
-import at.kara.geoworldgen.GeoCodingService;
-import at.kara.geoworldgen.GeoScaleWorldConfig;
-import at.kara.geoworldgen.GeoTiffReader;
+import at.kara.geoworldgen.*;
 import lombok.extern.java.Log;
 import org.bukkit.Location;
 import org.junit.Assert;
@@ -14,15 +12,26 @@ import java.util.Map;
 @Log
 public class Tests {
 
+    public static double ACHENSEE_LAT = 47.436347885547754;
+    public static double ACHENSEE_LNG = 11.71606722308175;
+
     public static double WILDSPITZE_LAT = 46.885278;
     public static double WILDSPITZE_LNG = 10.867222;
 
     public static double IBK_LAT = 47.271636;
     public static double IBK_LNG = 11.396928;
 
-    private static GeoScaleWorldConfig geoScaleWorldConfig;
-    private static GeoTiffReader geoTiffReader;
+
+    public static double WALD_LAT = 46.7865249;
+    public static double WALD_LNG = 12.8530762;
+
+    private static HeightMapReader heightMapReader;
+
+    private static MetaMapReader metaMapReader;
+
     private static GeoCodingService geoCodingService;
+
+    private static final PluginConfig pluginConfig = new PluginConfig();
 
     @BeforeClass
     public static void init(){
@@ -33,47 +42,112 @@ public class Tests {
         Map<String, Object> config = yaml.load(inputStream);
 
 
-        GeoScaleWorldConfig geoScaleWorldConfig = new GeoScaleWorldConfig();
-        geoScaleWorldConfig.setTeleportationSuffix((String) config.get("teleportationSuffix"));
-        geoScaleWorldConfig.setTifFileLocation((String) config.get("heightMap"));
-        geoScaleWorldConfig.setGeoCodingApiKey((String) config.get("geoCodingApiKey"));
+
+        pluginConfig.setGeoCodingApiKey((String) config.get("geoCodingApiKey"));
+        pluginConfig.setMapScaleFactor((Integer) config.get("scale"));
+        pluginConfig.setTeleportationSuffix((String) config.get("teleportationSuffix"));
+        pluginConfig.setHeightMapPath((String) config.get("heightMap"));
+        pluginConfig.setMetaMapPath((String) config.get("metaMap"));
 
         Map<String, Double> spawnLocation = (Map)config.get("spawnLocation");
-        geoScaleWorldConfig.setMapSpawnLatitude(spawnLocation.get("lat"));
-        geoScaleWorldConfig.setMapSpawnLongitude(spawnLocation.get("lng"));
+        pluginConfig.setMapSpawnLatitude(spawnLocation.get("lat"));
+        pluginConfig.setMapSpawnLongitude(spawnLocation.get("lng"));
 
-        geoTiffReader = new GeoTiffReader(geoScaleWorldConfig);
-        geoCodingService = new GeoCodingService(null, geoScaleWorldConfig, geoTiffReader);
+        heightMapReader = new HeightMapReader(pluginConfig);
+        geoCodingService = new GeoCodingService(null, pluginConfig, heightMapReader);
+        heightMapReader.init();
 
+        metaMapReader = new MetaMapReader(pluginConfig);
+        metaMapReader.init();
 
-        geoTiffReader.init();
     }
+
+    @Test
+    public void test_SpawnMapping(){
+        assertLocation(
+                heightMapReader.getMcLocationForLongLat(pluginConfig.getMapSpawnLongitude(), pluginConfig.getMapSpawnLatitude()),
+                0,
+                -4,
+                0
+        );
+    }
+
+
+    @Test
+    public void test_wildspitz(){
+        assertLocation(
+                heightMapReader.getMcLocationForLongLat(WILDSPITZE_LNG, WILDSPITZE_LAT),
+                -4038,
+                315,
+                4282
+        );
+    }
+
+    @Test
+    public void test_mappingAccuracy(){
+        int[] metaPos = metaMapReader.lngLatToMcXZ(ACHENSEE_LNG, ACHENSEE_LAT);
+        int[] heightMapPos = heightMapReader.lngLatToMcXZ(ACHENSEE_LNG, ACHENSEE_LAT);
+        Assert.assertArrayEquals(metaPos, heightMapPos);
+
+        metaPos = metaMapReader.lngLatToMcXZ(WILDSPITZE_LNG, WILDSPITZE_LAT);
+        heightMapPos = heightMapReader.lngLatToMcXZ(WILDSPITZE_LNG, WILDSPITZE_LAT);
+        Assert.assertArrayEquals(metaPos, heightMapPos);
+
+        metaPos = metaMapReader.lngLatToMcXZ(IBK_LNG, IBK_LAT);
+        heightMapPos = heightMapReader.lngLatToMcXZ(IBK_LNG, IBK_LAT);
+        Assert.assertArrayEquals(metaPos, heightMapPos);
+
+        metaPos = metaMapReader.lngLatToMcXZ(WALD_LNG, WALD_LAT);
+        heightMapPos = heightMapReader.lngLatToMcXZ(WALD_LNG, WALD_LAT);
+        Assert.assertArrayEquals(metaPos, heightMapPos);
+
+    }
+
+
+
+    @Test
+    public void test_MetaMap_Water(){
+        int[] achenSeeMcPos = metaMapReader.lngLatToMcXZ(ACHENSEE_LNG, ACHENSEE_LAT);
+
+        MetaMapReader.TerrainType typeForLocation = metaMapReader.getTypeForLocation(achenSeeMcPos[0], achenSeeMcPos[1]);
+        Assert.assertSame(typeForLocation, MetaMapReader.TerrainType.WATER);
+    }
+
+    @Test
+    public void test_MetaMap_NoData(){
+        int[] wildSpitzeMcPos = metaMapReader.lngLatToMcXZ(WILDSPITZE_LNG, WILDSPITZE_LAT);
+
+        MetaMapReader.TerrainType typeForLocation = metaMapReader.getTypeForLocation(wildSpitzeMcPos[0], wildSpitzeMcPos[1]);
+        Assert.assertSame(typeForLocation, MetaMapReader.TerrainType.NO_DATA);
+    }
+
+    @Test
+    public void test_MetaMap_Forest(){
+        int[] forestMcPos = metaMapReader.lngLatToMcXZ(WALD_LNG, WALD_LAT);
+
+        MetaMapReader.TerrainType typeForLocation = metaMapReader.getTypeForLocation(forestMcPos[0], forestMcPos[1]);
+        Assert.assertSame(typeForLocation, MetaMapReader.TerrainType.FOREST);
+    }
+
+
+
+
 
     @Test
     public void test_HeightMap(){
         Assert.assertEquals(
-                180,
-                geoTiffReader.getHeightForLocation(0,0)
+                -4,
+                heightMapReader.getHeightForMcXZ(0,0)
         );
     }
 
     @Test
     public void test_ibk(){
         assertLocation(
-                geoTiffReader.posToMcLocation(IBK_LNG, IBK_LAT),
-                -1336,
+                heightMapReader.getMcLocationForLongLat(IBK_LNG, IBK_LAT),
+                -1,
                 -4,
-                -887
-        );
-    }
-
-    @Test
-    public void test_wildspitz(){
-        assertLocation(
-                geoTiffReader.posToMcLocation(WILDSPITZE_LNG, WILDSPITZE_LAT),
-                -5289,
-                315,
-                3478
+                1
         );
     }
 
@@ -83,21 +157,9 @@ public class Tests {
         teleportToNameTask.run();
         assertLocation(
                 teleportToNameTask.getResult(),
-                -1457,
-                -3,
-                -781
-        );
-    }
-
-    @Test
-    public void test_geoCodingName2() {
-        GeoCodingService.BaseTeleportationTask teleportToNameTask = geoCodingService.getTeleportToNameTask(null, new String[]{"Imst"});
-        teleportToNameTask.run();
-        assertLocation(
-                teleportToNameTask.getResult(),
-                -6233,
-                17,
-                -509
+                -123,
+                -4,
+                106
         );
     }
 
@@ -107,17 +169,17 @@ public class Tests {
         teleportToCoordinatesTask.run();
         assertLocation(
                 teleportToCoordinatesTask.getResult(),
-                -1336,
+                -1,
                 -4,
-                -887
+                1
         );
     }
 
     @Test
     public void test_Incline() {
-        Location location = geoTiffReader.posToMcLocation(WILDSPITZE_LNG, WILDSPITZE_LAT);
-        float surfaceIncline = geoTiffReader.getTerrainRoughness(location);
-        Assert.assertEquals(20.5599, surfaceIncline, 0.001);
+        Location location = heightMapReader.getMcLocationForLongLat(WILDSPITZE_LNG, WILDSPITZE_LAT);
+        float surfaceIncline = heightMapReader.getTerrainRoughness(location);
+        Assert.assertEquals(17.36, surfaceIncline, 0.01);
     }
 
 
@@ -126,7 +188,7 @@ public class Tests {
         GeoCodingService.RandomTeleportTask randomTeleportTask = geoCodingService.getRandomTeleportTask(null);
         randomTeleportTask.run();
         Assert.assertNotEquals(
-                geoTiffReader.noMapDataValue,
+                heightMapReader.noMapDataValue,
                 randomTeleportTask.getResult().getBlockY()
         );
     }

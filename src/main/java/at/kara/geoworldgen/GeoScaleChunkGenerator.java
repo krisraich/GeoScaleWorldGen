@@ -15,14 +15,22 @@ import java.util.Random;
 
 public class GeoScaleChunkGenerator extends ChunkGenerator {
 
-    private final GeoTiffReader geoTiffReader;
-    private final GeoScaleWorldConfig geoScaleWorldConfig;
+    public static final int EXTREME_HEIGHT = 250;
+    public static final int TREE_BOARDER = 190;
+    public static final int MEADOW_BOARDER = 80;
 
-    private Location spawn;
+    public static final int ROUGH_TERRAIN = 25;
 
-    public GeoScaleChunkGenerator(GeoTiffReader geoTiffReader, GeoScaleWorldConfig geoScaleWorldConfig) {
-        this.geoScaleWorldConfig = geoScaleWorldConfig;
-        this.geoTiffReader = geoTiffReader;
+    public static final int SEMI_ROUGH_TERRAIN = 20;
+
+
+
+    private final HeightMapReader heightMapReader;
+    private final MetaMapReader metaMapReader;
+
+    public GeoScaleChunkGenerator(HeightMapReader heightMapReader, MetaMapReader metaMapReader) {
+        this.heightMapReader = heightMapReader;
+        this.metaMapReader = metaMapReader;
     }
 
     @Override
@@ -33,55 +41,61 @@ public class GeoScaleChunkGenerator extends ChunkGenerator {
 
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
+                int currentX = worldX + x;
+                int currentZ = worldZ + z;
 
-                int heightForLocation = this.geoTiffReader.getHeightForLocation(worldX + x, worldZ + z);
-                Material deepMaterial;
+                int heightForLocation = this.heightMapReader.getHeightForMcXZ(currentX, currentZ);
+
                 Material surfaceMaterial;
+                float terrainRoughness = this.heightMapReader.getTerrainRoughness(currentX, currentZ);
 
-                deepMaterial = Material.STONE;
+                //set ground layer bedrock
+                chunkData.setBlock(currentX, -64, currentZ, Material.BEDROCK);
 
-                surfaceMaterial = Material.DIRT;
-                //todo: use Gauss and not a hard limit
-                if(heightForLocation > 150){
-                    surfaceMaterial = Material.STONE;
+                //set ~80% of underground to stone
+                int stoneBoarder = heightForLocation - random.nextInt(10, 30);
+                for (int y = -63; y < stoneBoarder; y++) {
+                    chunkData.setBlock(currentX, y, currentZ, Material.STONE);
                 }
 
-                float terrainRoughness = this.geoTiffReader.getTerrainRoughness(worldX + x, worldZ + z);
-                if(terrainRoughness > 25){
-                    surfaceMaterial = Material.STONE;
-                }else if(terrainRoughness > 20){
-                    surfaceMaterial = Material.GRAVEL;
-                }else {
-                    surfaceMaterial = Material.DIRT;
-                }
 
-                chunkData.setBlock(x, -64, z, Material.BEDROCK);
-                for (int y = -63; y < heightForLocation; y++) {
+                for (int y = stoneBoarder; y < heightForLocation; y++) {
 
-                    if (Math.abs(heightForLocation - y) > 5){
-                        chunkData.setBlock(x, y, z, deepMaterial);
-                        continue;
+                    if(heightForLocation > EXTREME_HEIGHT){ //extreme height
+                        surfaceMaterial = Material.STONE;
+
+                    }else if(heightForLocation > TREE_BOARDER){ //tree boarder
+                        if(terrainRoughness > ROUGH_TERRAIN){
+                            surfaceMaterial = Material.STONE;
+                        }else if(terrainRoughness > SEMI_ROUGH_TERRAIN){
+                            surfaceMaterial = Material.GRAVEL;
+                        }else {
+                            surfaceMaterial = Material.DIRT;
+                        }
+
+                    }else if(heightForLocation > MEADOW_BOARDER){ //meadow
+                       if(terrainRoughness > SEMI_ROUGH_TERRAIN){
+                            surfaceMaterial = Material.GRAVEL;
+                        }else {
+                            surfaceMaterial = Material.DIRT;
+                        }
+
+                    }else {
+                        surfaceMaterial = Material.DIRT;
                     }
-                    if ( Math.abs(heightForLocation - y) == 1 && surfaceMaterial == Material.DIRT) {
-                        surfaceMaterial = Material.GRASS_BLOCK;
-                    }
-                    chunkData.setBlock(x, y, z, surfaceMaterial);
+
+                    chunkData.setBlock(currentX, y, currentZ, surfaceMaterial);
+
                 }
+
+
+
             }
         }
     }
 
 
     private static class CustomBiomesProvider extends BiomeProvider {
-
-        private static CustomBiomesProvider instance;
-
-        public static CustomBiomesProvider getInstance(GeoScaleChunkGenerator geoScaleChunkGenerator){
-            if(instance == null){
-                instance = new CustomBiomesProvider(geoScaleChunkGenerator);
-            }
-            return instance;
-        }
 
         private final GeoScaleChunkGenerator parent;
 
@@ -92,13 +106,70 @@ public class GeoScaleChunkGenerator extends ChunkGenerator {
         @NotNull
         @Override
         public Biome getBiome(@NotNull WorldInfo worldInfo, int x, int y, int z) {
-            return parent.geoTiffReader.getHeightForLocation(x,z) > 150 ? Biome.FOREST : Biome.FROZEN_PEAKS; //todo: read biome from orhto
+
+            MetaMapReader.TerrainType terrainType = parent.metaMapReader.getTypeForLocation(x, y);
+            int heightForLocation = parent.heightMapReader.getHeightForMcXZ(x, y);
+
+            switch (terrainType){
+                case FOREST -> {
+                    return heightForLocation > TREE_BOARDER ? Biome.TAIGA : Biome.OLD_GROWTH_SPRUCE_TAIGA;
+                }
+                case WATER -> {
+                    return heightForLocation > EXTREME_HEIGHT ? Biome.FROZEN_RIVER : Biome.RIVER;
+                }
+                case NO_DATA -> {
+                    float terrainRoughness = parent.heightMapReader.getTerrainRoughness(x, y);
+
+                    if(heightForLocation > EXTREME_HEIGHT){
+                        if(terrainRoughness > ROUGH_TERRAIN){
+                            return Biome.JAGGED_PEAKS;
+                        }else if(terrainRoughness > SEMI_ROUGH_TERRAIN){
+                            return Biome.SNOWY_SLOPES;
+                        }else {
+                            return Biome.SNOWY_PLAINS;
+                        }
+                    }else if(heightForLocation > TREE_BOARDER){
+                        if(terrainRoughness > ROUGH_TERRAIN){
+                            return Biome.WINDSWEPT_GRAVELLY_HILLS;
+                        }else {
+                            return Biome.WINDSWEPT_HILLS;
+                        }
+                    }else if(heightForLocation > MEADOW_BOARDER){
+                        if(terrainRoughness > ROUGH_TERRAIN){
+                            return Biome.WINDSWEPT_HILLS;
+                        }else {
+                            return Biome.MEADOW;
+                        }
+                    }else {
+                        return Biome.PLAINS;
+                    }
+                }
+            }
+
+            return Biome.PLAINS;
         }
 
         @NotNull
         @Override
         public List<Biome> getBiomes(@NotNull WorldInfo worldInfo) {
-            return List.of(Biome.FOREST, Biome.ICE_SPIKES);
+            return List.of(
+                    Biome.JAGGED_PEAKS,
+                    Biome.FROZEN_PEAKS,
+                    Biome.SNOWY_SLOPES,
+                    Biome.SNOWY_PLAINS,
+                    Biome.WINDSWEPT_GRAVELLY_HILLS,
+                    Biome.WINDSWEPT_HILLS,
+                    Biome.WINDSWEPT_FOREST,
+                    Biome.MEADOW,
+                    Biome.PLAINS,
+                    Biome.OLD_GROWTH_SPRUCE_TAIGA,
+                    Biome.TAIGA,
+                    Biome.FOREST,
+                    Biome.FLOWER_FOREST,
+                    Biome.BIRCH_FOREST,
+                    Biome.FROZEN_RIVER,
+                    Biome.RIVER
+            );
         }
 
     }
@@ -106,28 +177,13 @@ public class GeoScaleChunkGenerator extends ChunkGenerator {
     @Nullable
     @Override
     public BiomeProvider getDefaultBiomeProvider(@NotNull WorldInfo worldInfo) {
-        return CustomBiomesProvider.getInstance(this);
+        return new CustomBiomesProvider(this);
     }
 
     @Nullable
     @Override
     public Location getFixedSpawnLocation(@NotNull World world, @NotNull Random random) {
-        if(this.spawn == null){
-            Location location = this.geoTiffReader.posToMcLocation(
-                    this.geoScaleWorldConfig.getMapSpawnLongitude(),
-                    this.geoScaleWorldConfig.getMapSpawnLatitude(),
-                    world
-            );
-            if(location.getBlockY() == this.geoTiffReader.noMapDataValue){
-                location = new Location(world,
-                        0,
-                        this.geoTiffReader.getHeightForLocation(0,0),
-                        0
-                );
-            }
-            this.spawn = location;
-        }
-        return spawn;
+        return this.heightMapReader.getSpawn(world);
     }
 
     @Override
