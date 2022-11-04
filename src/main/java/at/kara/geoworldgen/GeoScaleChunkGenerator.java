@@ -183,7 +183,9 @@ public class GeoScaleChunkGenerator extends ChunkGenerator {
     @Nullable
     @Override
     public Location getFixedSpawnLocation(@NotNull World world, @NotNull Random random) {
-        return this.heightMapReader.getSpawn(world);
+        Location spawn = this.heightMapReader.getSpawn(world);
+        spawn.setWorld(world);
+        return spawn;
     }
 
     @Override
