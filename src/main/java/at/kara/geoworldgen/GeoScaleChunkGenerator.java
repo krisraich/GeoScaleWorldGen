@@ -19,9 +19,9 @@ public class GeoScaleChunkGenerator extends ChunkGenerator {
     public static final int TREE_BOARDER = 190;
     public static final int MEADOW_BOARDER = 80;
 
-    public static final int ROUGH_TERRAIN = 25;
+    public static final int ROUGH_TERRAIN = 35;
 
-    public static final int SEMI_ROUGH_TERRAIN = 20;
+    public static final int SEMI_ROUGH_TERRAIN = 27;
 
     private final HeightMapReader heightMapReader;
     private final MetaMapReader metaMapReader;
@@ -30,6 +30,15 @@ public class GeoScaleChunkGenerator extends ChunkGenerator {
         this.heightMapReader = heightMapReader;
         this.metaMapReader = metaMapReader;
     }
+
+
+    @Override
+    public boolean shouldGenerateCaves() { return true; }
+
+    public boolean shouldGenerateDecorations() { return true; }
+
+    @Override
+    public boolean shouldGenerateMobs() { return true; }
 
     @Override
     public void generateNoise(@NotNull WorldInfo worldInfo, @NotNull Random random, int chunkX, int chunkZ, @NotNull ChunkGenerator.ChunkData chunkData) {
@@ -44,6 +53,9 @@ public class GeoScaleChunkGenerator extends ChunkGenerator {
                 int absoluteZ = worldZ + z;
 
                 int heightForLocation = this.heightMapReader.getHeightForMcXZ(absoluteX, absoluteZ);
+                if(heightForLocation == this.heightMapReader.noMapDataValue){
+                    continue;
+                }
 
                 Material surfaceMaterial;
                 float terrainRoughness = this.heightMapReader.getTerrainRoughness(absoluteX, absoluteZ);
@@ -51,14 +63,12 @@ public class GeoScaleChunkGenerator extends ChunkGenerator {
                 //set ground layer bedrock
                 chunkData.setBlock(x, -64, z, Material.BEDROCK);
 
-                //set ~80% of underground to stone
                 int stoneBoarder = heightForLocation - random.nextInt(10, 30);
                 for (int y = -63; y < stoneBoarder; y++) {
                     chunkData.setBlock(x, y, z, Material.STONE);
                 }
 
-
-                for (int y = stoneBoarder; y < heightForLocation; y++) {
+                for (int y = stoneBoarder; y <= heightForLocation; y++) {
 
                     if(heightForLocation > EXTREME_HEIGHT){ //extreme height
                         surfaceMaterial = Material.STONE;
@@ -83,12 +93,39 @@ public class GeoScaleChunkGenerator extends ChunkGenerator {
                         surfaceMaterial = Material.DIRT;
                     }
 
+                    if(y == heightForLocation && surfaceMaterial == Material.DIRT){
+                        surfaceMaterial = Material.GRASS_BLOCK;
+                    }
                     chunkData.setBlock(x, y, z, surfaceMaterial);
                 }
             }
         }
     }
 
+
+    @Override
+    public void generateSurface(@NotNull WorldInfo worldInfo, @NotNull Random random, int chunkX, int chunkZ, @NotNull ChunkGenerator.ChunkData chunkData) {
+        int worldX = chunkX * 16;
+        int worldZ = chunkZ * 16;
+
+        for (int x = 0; x < 16; x++) {
+            for (int z = 0; z < 16; z++) {
+
+                int absoluteX = worldX + x;
+                int absoluteZ = worldZ + z;
+                int blockHeight = this.heightMapReader.getHeightForMcXZ(absoluteX, absoluteZ);
+
+                Biome currentBiome = chunkData.getBiome(x, blockHeight, z);
+                if(currentBiome == Biome.RIVER){
+                    chunkData.setBlock(x, blockHeight, z, Material.WATER);
+                }else if(currentBiome == Biome.FROZEN_RIVER){
+                    chunkData.setBlock(x, blockHeight, z, blockHeight > EXTREME_HEIGHT ? Material.BLUE_ICE : Material.ICE);
+                }
+            }
+        }
+
+
+    }
 
     private static class CustomBiomesProvider extends BiomeProvider {
 
@@ -101,7 +138,6 @@ public class GeoScaleChunkGenerator extends ChunkGenerator {
         @NotNull
         @Override
         public Biome getBiome(@NotNull WorldInfo worldInfo, int x, int y, int z) {
-
             MetaMapReader.TerrainType terrainType = parent.metaMapReader == null ? MetaMapReader.TerrainType.NO_DATA : parent.metaMapReader.getTypeForLocation(x, z);
             int heightForLocation = parent.heightMapReader.getHeightForMcXZ(x, z);
 
@@ -182,12 +218,5 @@ public class GeoScaleChunkGenerator extends ChunkGenerator {
         spawn.setWorld(world);
         return spawn;
     }
-
-    @Override
-    public boolean shouldGenerateDecorations() { return true; }
-
-    @Override
-    public boolean shouldGenerateMobs() { return true; }
-
 
 }

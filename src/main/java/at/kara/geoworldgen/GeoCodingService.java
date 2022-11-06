@@ -66,7 +66,9 @@ public class GeoCodingService implements CommandExecutor {
         protected void teleportPlayer(){
             Util.log("start teleporting");
             if(player != null){
-                //set player heading north
+
+                // make player stand on top of block. and facing north (for better orientation)
+                result.setY(result.getY() + 1);
                 result.setPitch(0);
                 result.setYaw(180);
                 result.setWorld(player.getWorld());
