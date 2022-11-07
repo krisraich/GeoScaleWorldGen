@@ -52,6 +52,9 @@ public class GeoScaleChunkGenerator extends ChunkGenerator {
                 int absoluteX = worldX + x;
                 int absoluteZ = worldZ + z;
 
+                //set ground layer bedrock
+                chunkData.setBlock(x, -64, z, Material.BEDROCK);
+
                 int heightForLocation = this.heightMapReader.getHeightForMcXZ(absoluteX, absoluteZ);
                 if(heightForLocation == this.heightMapReader.noMapDataValue){
                     continue;
@@ -59,9 +62,6 @@ public class GeoScaleChunkGenerator extends ChunkGenerator {
 
                 Material surfaceMaterial;
                 float terrainRoughness = this.heightMapReader.getTerrainRoughness(absoluteX, absoluteZ);
-
-                //set ground layer bedrock
-                chunkData.setBlock(x, -64, z, Material.BEDROCK);
 
                 int stoneBoarder = heightForLocation - random.nextInt(10, 30);
                 for (int y = -63; y < stoneBoarder; y++) {
