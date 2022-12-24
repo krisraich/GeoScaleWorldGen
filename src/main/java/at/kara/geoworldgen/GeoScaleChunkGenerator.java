@@ -16,6 +16,7 @@ import java.util.Random;
 public class GeoScaleChunkGenerator extends ChunkGenerator {
 
     public static final int EXTREME_HEIGHT = 250;
+    public static final int DECENT_HEIGHT = 160;
     public static final int TREE_BOARDER = 190;
     public static final int MEADOW_BOARDER = 80;
 
@@ -102,7 +103,6 @@ public class GeoScaleChunkGenerator extends ChunkGenerator {
         }
     }
 
-
     @Override
     public void generateSurface(@NotNull WorldInfo worldInfo, @NotNull Random random, int chunkX, int chunkZ, @NotNull ChunkGenerator.ChunkData chunkData) {
         int worldX = chunkX * 16;
@@ -115,12 +115,33 @@ public class GeoScaleChunkGenerator extends ChunkGenerator {
                 int absoluteZ = worldZ + z;
                 int blockHeight = this.heightMapReader.getHeightForMcXZ(absoluteX, absoluteZ);
 
-                Biome currentBiome = chunkData.getBiome(x, blockHeight, z);
-                if(currentBiome == Biome.RIVER){
-                    chunkData.setBlock(x, blockHeight, z, Material.WATER);
-                }else if(currentBiome == Biome.FROZEN_RIVER){
-                    chunkData.setBlock(x, blockHeight, z, blockHeight > EXTREME_HEIGHT ? Material.BLUE_ICE : Material.ICE);
+
+                Material waterType = blockHeight >= EXTREME_HEIGHT ? Material.ICE : Material.WATER;
+//                Material shoreType = blockHeight >= MEADOW_BOARDER ? Material.GRAVEL : Material.SAND;
+
+                /*
+                    apply filter to generate smooth water and depth.
+                    1 is all water, 1 / gridSize² (eg. 5 -> 0.04) is only current block is water
+                 */
+                float waterValue = this.metaMapReader.applyFilterToWaterMap(absoluteX, absoluteZ, 3);
+
+                if(waterValue > 0.9){
+                    chunkData.setBlock(x, blockHeight-5, z, Material.WATER);
                 }
+                if(waterValue > 0.8){
+                    chunkData.setBlock(x, blockHeight-4, z, Material.WATER);
+                }
+                if(waterValue > 0.6){
+                    chunkData.setBlock(x, blockHeight-3, z, waterType);
+                }
+                if(waterValue > 0.5){
+                    chunkData.setBlock(x, blockHeight-2, z, waterType);
+                }
+                if(waterValue > 0.3){
+                    chunkData.setBlock(x, blockHeight-1, z, waterType);
+                    chunkData.setBlock(x, blockHeight, z, Material.AIR);
+                }
+
             }
         }
 

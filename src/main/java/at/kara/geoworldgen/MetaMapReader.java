@@ -67,4 +67,40 @@ public class MetaMapReader extends BaseTiffReader{
         return TerrainType.NO_DATA;
     }
 
+    /**
+     * Applies image smoothing to terrain, for better water
+     * todo: implement a Custom Kernel (maybe Gauss)
+     * @param mcX
+     * @param mcZ
+     * @param gridSize
+     * @return
+     */
+    public float applyFilterToWaterMap(int mcX, int mcZ, int gridSize){
+
+        if(gridSize % 2 != 1){
+            throw new RuntimeException("grid is not of uneven length");
+        }
+
+        int kernelSize = gridSize * gridSize;
+
+        double smoothFactor = 1.0 / kernelSize;
+
+        int centerOffset = gridSize / 2;
+
+        float sum = 0;
+        for(int z = 0; z < gridSize; z++){
+            for(int x = 0; x < gridSize; x++){
+                if(getTypeForLocation(
+                        mcX - centerOffset + x,
+                        mcZ - centerOffset + z
+                ) == TerrainType.WATER){
+                    sum += smoothFactor;
+                }
+            }
+        }
+
+        return sum;
+    }
+
+
 }

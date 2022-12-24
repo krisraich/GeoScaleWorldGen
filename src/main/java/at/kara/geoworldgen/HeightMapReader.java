@@ -34,7 +34,7 @@ import java.util.Locale;
  * mc -64 -> tirol -6    -60
  *
  */
-public class HeightMapReader extends BaseTiffReader{
+public class HeightMapReader extends BaseTiffReader {
 
 
     public static final int MC_BUILD_LIMIT = 319;
